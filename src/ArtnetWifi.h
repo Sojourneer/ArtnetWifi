@@ -53,6 +53,7 @@ THE SOFTWARE.
 #define ART_NET_PORT 6454
 // Opcodes
 #define ART_POLL 0x2000
+#define ART_POLL_REPLY 0x2100
 #define ART_DMX 0x5000
 #define ART_SYNC 0x5200
 // Buffers
@@ -66,12 +67,55 @@ THE SOFTWARE.
 typedef std::function <void (DMX_FUNC_PARAM)> StdFuncDmx_t;
 #endif
 
+struct artnet_reply_s {
+  uint8_t  id[8];
+  uint16_t opCode;
+  uint8_t  ip[4];
+  uint16_t port;
+  uint8_t  verH;
+  uint8_t  ver;
+  uint8_t  subH;
+  uint8_t  sub;
+  uint8_t  oemH;
+  uint8_t  oem;
+  uint8_t  ubea;
+  uint8_t  status;
+  uint8_t  etsaman[2];
+  uint8_t  shortname[18];
+  uint8_t  longname[64];
+  uint8_t  nodereport[64];
+  uint8_t  numbportsH;
+  uint8_t  numbports;
+  uint8_t  porttypes[4];//max of 4 ports per node
+  uint8_t  goodinput[4];
+  uint8_t  goodoutput[4];
+  uint8_t  swin[4];
+  uint8_t  swout[4];
+  uint8_t  swvideo;
+  uint8_t  swmacro;
+  uint8_t  swremote;
+  uint8_t  sp1;
+  uint8_t  sp2;
+  uint8_t  sp3;
+  uint8_t  style;
+  uint8_t  mac[6];
+  uint8_t  bindip[4];
+  uint8_t  bindindex;
+  uint8_t  status2;
+  uint8_t  filler[26];
+} __attribute__((packed));
+
 class ArtnetWifi
 {
 public:
   ArtnetWifi();
 
   void begin(String hostname = "");
+  
+  void setBroadcastAuto(IPAddress ip, IPAddress sn);
+  void setBroadcast(byte bc[]);
+  void setBroadcast(IPAddress bc);
+
   uint16_t read(void);
   /* returns 1 for Ok, or 0 on problem */
   int write(void);
@@ -113,12 +157,6 @@ public:
     physical = port;
   }
 
-  [[deprecated]]
-  inline void setPhisical(uint8_t port)
-  {
-    setPhysical(port);
-  }
-
   inline uint16_t getLength(void)
   {
     return dmxDataLength;
@@ -134,6 +172,11 @@ public:
     artDmxCallback = fptr;
   }
 
+  inline void setArtSyncCallback(void (*fptr)(IPAddress remoteIP))
+  {
+    artSyncCallback = fptr;
+  }
+
 #if !defined(ARDUINO_AVR_UNO_WIFI_REV2)
   inline void setArtDmxFunc(StdFuncDmx_t func)
   {
@@ -141,18 +184,22 @@ public:
   }
 #endif
 
-  inline IPAddress& getSenderIp()
+  inline IPAddress& getRemoteIp()
   {
-    return senderIp;
+    return remoteIP;
   }
 
 private:
+  uint8_t  node_ip_address[4];
+  uint8_t  id[8];
   uint16_t makePacket(void);
+  struct artnet_reply_s ArtPollReply;
 
   WiFiUDP Udp;
   String host;
   uint8_t artnetPacket[MAX_BUFFER_ARTNET];
   uint16_t packetSize;
+  IPAddress broadcast;
   uint16_t opcode;
   uint8_t sequence;
   uint8_t physical;
@@ -160,11 +207,13 @@ private:
   uint16_t outgoingUniverse;
   uint16_t dmxDataLength;
   void (*artDmxCallback)(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* data);
+  void (*artSyncCallback)(IPAddress remoteIP);
+
 #if !defined(ARDUINO_AVR_UNO_WIFI_REV2)
   StdFuncDmx_t artDmxFunc;
 #endif
   static const char artnetId[];
-  IPAddress senderIp;
+  IPAddress remoteIP;
 };
 
 #endif
