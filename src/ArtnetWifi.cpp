@@ -117,20 +117,20 @@ uint16_t ArtnetWifi::read(void)
       	node_ip_address[2] = local_ip[2];
       	node_ip_address[3] = local_ip[3];
 
-        sprintf((char *)id, "Art-Net");
+        sprintf((char *)id, "Art-Net"); // Fixed, per protocol definition
         memcpy(ArtPollReply.id, id, sizeof(ArtPollReply.id));
         memcpy(ArtPollReply.ip, node_ip_address, sizeof(ArtPollReply.ip));
 
         ArtPollReply.opCode = ART_POLL_REPLY;
         ArtPollReply.port =  ART_NET_PORT;
 
-        memset(ArtPollReply.goodinput,  0x08, 4);
+        memset(ArtPollReply.goodinput,   0x08, 4);
         memset(ArtPollReply.goodoutput,  0x80, 4);
-        memset(ArtPollReply.porttypes,  0xc0, 4);
+        memset(ArtPollReply.porttypes,   0xc0, 4);
 
         uint8_t shortname [18];
         uint8_t longname [64];
-        sprintf((char *)shortname, "artnet arduino");
+        sprintf((char *)shortname, "WW Fogger%d", node_ip_address[3]);
         sprintf((char *)longname, "Art-Net -> Arduino Bridge");
         memcpy(ArtPollReply.shortname, shortname, sizeof(shortname));
         memcpy(ArtPollReply.longname, longname, sizeof(longname));
@@ -144,15 +144,15 @@ uint16_t ArtnetWifi::read(void)
         ArtPollReply.oemH       = 0;
         ArtPollReply.oem        = 0xFF;
         ArtPollReply.ubea       = 0;
-        ArtPollReply.status     = 0xd2;
+        ArtPollReply.status     = 0xF0;
         ArtPollReply.swvideo    = 0;
         ArtPollReply.swmacro    = 0;
         ArtPollReply.swremote   = 0;
         ArtPollReply.style      = 0;
 
         ArtPollReply.numbportsH = 0;
-        ArtPollReply.numbports  = 4;
-        ArtPollReply.status2    = 0x08;
+        ArtPollReply.numbports  = 2;
+        ArtPollReply.status2    = 0x06;
 
         ArtPollReply.bindip[0] = node_ip_address[0];
         ArtPollReply.bindip[1] = node_ip_address[1];
