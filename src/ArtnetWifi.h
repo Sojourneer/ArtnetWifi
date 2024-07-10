@@ -105,12 +105,15 @@ struct artnet_reply_s {
   uint8_t  filler[26];
 } __attribute__((packed));
 
+typedef void (*artPollReplyInitCallback_t)(struct artnet_reply_s*);
+typedef void (*artPollReplyCallback_t)(struct artnet_reply_s*);
+
 class ArtnetWifi
 {
 public:
   ArtnetWifi();
 
-  void begin(String hostname = "");
+  void begin(String hostname = "", void (*fptr)(struct artnet_reply_s*) = 0);
   
   void setBroadcastAuto(IPAddress ip, IPAddress sn);
   void setBroadcast(byte bc[]);
@@ -177,6 +180,11 @@ public:
     artSyncCallback = fptr;
   }
 
+  inline void setArtPollReplyCallback(void (*fptr)(struct artnet_reply_s*))
+  {
+    artPollReplyCallback = fptr;
+  }
+
 #if !defined(ARDUINO_AVR_UNO_WIFI_REV2)
   inline void setArtDmxFunc(StdFuncDmx_t func)
   {
@@ -194,6 +202,7 @@ private:
   uint8_t  id[8];
   uint16_t makePacket(void);
   struct artnet_reply_s ArtPollReply;
+  bool ArtPollReply_initialized;
 
   WiFiUDP Udp;
   String host;
@@ -208,6 +217,12 @@ private:
   uint16_t dmxDataLength;
   void (*artDmxCallback)(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* data);
   void (*artSyncCallback)(IPAddress remoteIP);
+
+  artPollReplyInitCallback_t artPollReplyInitCallback;
+  artPollReplyCallback_t     artPollReplyCallback; 
+ 
+  void populatePollReplywithDefaults();
+
 
 #if !defined(ARDUINO_AVR_UNO_WIFI_REV2)
   StdFuncDmx_t artDmxFunc;
