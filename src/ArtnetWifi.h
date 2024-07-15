@@ -67,6 +67,27 @@ THE SOFTWARE.
 typedef std::function <void (DMX_FUNC_PARAM)> StdFuncDmx_t;
 #endif
 
+typedef enum {
+  RcDebug       = 0x0000,
+  RcPowerOk     = 0x0001,
+  RcPowerFail   = 0x0002,
+  RcSocketWr1   = 0x0003,
+  RcParseFail   = 0x0004,
+  RcUdpFail     = 0x0005,
+  RcShNameOk    = 0x0006,
+  RcKiNameIj    = 0x0007,
+  RcDmxError    = 0x0008,
+  RcDmxUdpFull  = 0x0009,
+  RcDmxRxFull   = 0x000A,
+  RcSwitchErr   = 0x000b,
+  RcConfigErr   = 0x000C,
+  RcDMXShort    = 0x000d,
+  RcFirmwareFail= 0x000e,
+  RcUserFail    = 0x000F,
+  RcFactoryRes  = 0x0010
+
+} artnet_node_reportcode_t;
+
 struct artnet_reply_s {
   uint8_t  id[8];
   uint16_t opCode;
@@ -220,9 +241,16 @@ private:
 
   artPollReplyInitCallback_t artPollReplyInitCallback;
   artPollReplyCallback_t     artPollReplyCallback; 
- 
   void populatePollReplywithDefaults();
 
+
+
+public:
+  uint16_t nodereport_code;
+  int16_t  poll_count;
+  void     set_input_status(uint8_t port, uint8 status) {
+    ArtPollReply.goodoutput[port-1] = status;
+  };
 
 #if !defined(ARDUINO_AVR_UNO_WIFI_REV2)
   StdFuncDmx_t artDmxFunc;

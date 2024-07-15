@@ -30,7 +30,7 @@ THE SOFTWARE.
 
 const char ArtnetWifi::artnetId[] = ART_NET_ID;
 
-ArtnetWifi::ArtnetWifi() : artDmxCallback(nullptr) {}
+ArtnetWifi::ArtnetWifi() : artDmxCallback(nullptr), artPollReplyCallback(nullptr), artSyncCallback(nullptr) {}
 
 void ArtnetWifi::begin(String hostname, void (*pollReplyInit)(struct artnet_reply_s*))
 {
@@ -38,6 +38,7 @@ void ArtnetWifi::begin(String hostname, void (*pollReplyInit)(struct artnet_repl
   host = hostname;
   sequence = 1;
   physical = 0;
+  nodereport_code = RcPowerOk;
   artPollReplyInitCallback = pollReplyInit;
   populatePollReplywithDefaults();
 }
@@ -79,9 +80,9 @@ void ArtnetWifi::populatePollReplywithDefaults(void)
         ArtPollReply.opCode = ART_POLL_REPLY;
         ArtPollReply.port =  ART_NET_PORT;
 
-        memset(ArtPollReply.goodinput,   0x08, 4);
-        memset(ArtPollReply.goodoutput,  0x80, 4);
-        memset(ArtPollReply.porttypes,   0xc0, 4);
+        memset(ArtPollReply.goodinput,   0x00, 4);  // no input yet
+        memset(ArtPollReply.goodoutput,  0x00, 4);  // no output yet
+        memset(ArtPollReply.porttypes,   0x80, 4);  // can output
 
         uint8_t shortname [18];
         uint8_t longname [64];
@@ -96,8 +97,8 @@ void ArtnetWifi::populatePollReplywithDefaults(void)
         ArtPollReply.ver        = 0;
         ArtPollReply.subH       = 0;
         ArtPollReply.sub        = 0;
-        ArtPollReply.oemH       = 0;
-        ArtPollReply.oem        = 0xFF;
+        ArtPollReply.oemH       = OEM_CODE >> 8;
+        ArtPollReply.oem        = OEM_CODE & 0xFF;
         ArtPollReply.ubea       = 0;
         ArtPollReply.status     = 0xF0;
         ArtPollReply.swvideo    = 0;
@@ -150,6 +151,8 @@ uint16_t ArtnetWifi::read(void)
       }
       if (opcode == ART_POLL)
       {
+        poll_count++;
+
         // Add just-in-time data to the reply struct, and then send it to the network's broadcast address
         Serial.print("POLL from ");
         Serial.print(remoteIP);
@@ -172,14 +175,13 @@ uint16_t ArtnetWifi::read(void)
         ArtPollReply.bindip[1] = node_ip_address[1];
         ArtPollReply.bindip[2] = node_ip_address[2];
         ArtPollReply.bindip[3] = node_ip_address[3];
+        ArtPollReply.bindindex = 0;
 
         // populate with user mods
         if(artPollReplyInitCallback != 0) {
           (*artPollReplyInitCallback)(&ArtPollReply); // user mods
           artPollReplyInitCallback = 0;     // only once
         }
-
-        sprintf((char *)ArtPollReply.nodereport, "%i DMX output universes active.", ArtPollReply.numbports);
 
         if(artPollReplyCallback != 0)
           (*artPollReplyCallback)(&ArtPollReply);
