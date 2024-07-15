@@ -249,7 +249,7 @@ public:
   uint16_t nodereport_code;
   int16_t  poll_count;
   void     set_input_status(uint8_t port, uint8 status) {
-    ArtPollReply.goodoutput[port-1] = status;
+    ArtPollReply.goodoutput[port] = status;
   };
 
 #if !defined(ARDUINO_AVR_UNO_WIFI_REV2)
